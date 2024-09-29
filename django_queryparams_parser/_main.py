@@ -3,7 +3,7 @@ from collections import defaultdict
 from django.urls import path as _path
 from django.urls.resolvers import URLPattern
 
-from django_queryparams_handler.params import InvalidQueryParameter
+from django_queryparams_parser.params import InvalidQueryParameter
 
 
 class QueryParamGroup:

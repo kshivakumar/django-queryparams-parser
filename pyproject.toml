@@ -3,9 +3,9 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "django-queryparams-handler"
+name = "django-queryparams-parser"
 version = "0.1.0"
-description = "Django middleware for validating and type-casting URL query parameters"
+description = "Django middleware for parsing URL query parameters"
 requires-python = ">=3.8"
 authors = [
   {name = "Shiva Kumar K", email = "kshivakumar@outlook.com"}
@@ -29,6 +29,6 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/kshivakumar/django-queryparams-handler"
-"Bug Reports" = "https://github.com/kshivakumar/django-queryparams-handler/issues"
-"Source" = "https://github.com/kshivakumar/django-queryparams-handler"
+"Homepage" = "https://github.com/kshivakumar/django-queryparams-parser"
+"Bug Reports" = "https://github.com/kshivakumar/django-queryparams-parser/issues"
+"Source" = "https://github.com/kshivakumar/django-queryparams-parser"

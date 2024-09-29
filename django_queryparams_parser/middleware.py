@@ -2,12 +2,11 @@ from django.conf import settings
 from django.http import HttpResponseBadRequest
 from django.utils.datastructures import MultiValueDict
 
-from django_queryparams_handler._main import QueryParams
+from django_queryparams_parser._main import QueryParams
 
 
-def QueryParamsHandler(get_response):
-    def handler(request):
-        breakpoint()
+def QueryParamsParser(get_response):
+    def parser(request):
         parsed, errors = QueryParams.validate(request.path, request.GET)
         if errors:
             if settings.DEBUG:
@@ -20,4 +19,4 @@ def QueryParamsHandler(get_response):
         resp = get_response(request)
         return resp
 
-    return handler
+    return parser
