@@ -1,2 +1,1 @@
-# django-queryparams-handler
-Django middleware for validating and type-casting URL query parameters
+Django middleware for parsing URL query parameters

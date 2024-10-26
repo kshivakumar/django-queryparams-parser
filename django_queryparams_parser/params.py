@@ -1,4 +1,5 @@
 from datetime import date
+from inspect import signature
 
 # Notes:
 # 1. Do defensive programming in `__init__`
@@ -12,11 +13,13 @@ from datetime import date
 # - Replace list comprehensions or for-loops with map and filter
 
 # TODO:
-# - Handle `many`
-# - Define query params in views.py
+# - Handle null/empty param values
 # - Define DateTime
 # - Prefix/suffix query param name in all exception messages
-# - Handle null param values
+# - Implement QueryParamGroup
+# - Optimize QueryParam memory usage, use slots?
+# - Add annotations
+# - Add extensive docstrings
 # - Define UUID
 # - Define Base64
 
@@ -74,15 +77,26 @@ class QueryParam:
                 raise TypeError(
                     f"'validators' must be a list/tuple, not '{type(validators)}'"
                 )
-            if not all(callable(f) for f in validators):
-                raise ValueError("one or more of the 'validators' is not a callable")
-            # TODO: Check signature to ensure the callable's only parameters are 'value' and 'parsed', in that order
+            for validator in validators:
+                if not callable(validator):
+                    raise ValueError(f"Validator {validator.__name__} is not callable")
+                sig = signature(validator)
+                if len(sig.parameters) != 2:
+                    raise ValueError(
+                        f"Validator {validator.__name__} must have exactly two parameters"
+                    )
             self._value_checks.extend(validators)
 
-    def validate(self, value):
+    def validate_single(self, value):
         parsed = self.parse(value)
         self._check(value, parsed)
         return parsed
+
+    def validate_all(self, values):
+        if self.many or len(values) == 1:
+            return [self.validate_single(value) for value in values]
+        else:
+            raise InvalidQueryParameter(f"Expected 1 value, got {len(values)}")
 
     # REVIEW: different `validate` function when choices are given, directly do 'in' check
 
@@ -94,7 +108,7 @@ class QueryParam:
             val_check(value, parsed)
 
     def _validate_choices(self, choices):
-        return {self.validate(choice) for choice in choices}
+        return {self.validate_single(choice) for choice in choices}
 
     def _check_one_of_choices(self, value, parsed):
         if parsed not in self.choices:
@@ -110,8 +124,8 @@ class BoundedParam(QueryParam):
                 "'min_value' and/or 'max_value' can't be clubbed with 'choices'"
             )
 
-        self.min_value = None if min_value is None else self.validate(min_value)
-        self.max_value = None if max_value is None else self.validate(max_value)
+        self.min_value = None if min_value is None else self.validate_single(min_value)
+        self.max_value = None if max_value is None else self.validate_single(max_value)
 
         if (self.min_value and self.max_value) and self.max_value < self.min_value:
             raise ValueError("'max_value' must be >= 'min_value'")
@@ -280,6 +294,10 @@ class Str(QueryParam):
     def parse(self, value):
         return value
 
+    def check_empty_string(self, value, parsed):
+        if not self.allow_empty and len(value) == 0:
+            raise InvalidQueryParameter()
+
     def check_min_length(self, value, parsed):
         if not len(value) < self.min_length:
             raise InvalidQueryParameter()
@@ -343,15 +361,18 @@ class Bool(QueryParam):
                 raise ValueError()
             self.truthy, self.falsy = custom_bool
 
-    def validate(self, value):
-        if not self.explicit and value is None:
-            return True  # TODO: Review
+    def validate_all(self, values):
+        # TODO: what if multiple values are passed?
+        # For the time being, consider the last value as the correct one
+        value = values[-1]
+        if not self.explicit and value == "":
+            return [True]  # TODO: Review
         if self.ignore_case:
             value = value.lower()
         if value == self.truthy:
-            return True
+            return [True]
         elif value == self.falsy:
-            return False
+            return [False]
         else:
             raise InvalidQueryParameter(
                 f"Expected one of [{self.truthy}, {self.falsy}], got '{value}'"
