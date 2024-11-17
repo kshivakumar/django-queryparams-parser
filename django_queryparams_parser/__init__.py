@@ -1,16 +1,6 @@
 from django_queryparams_parser._main import (
-    QueryParamGroup,
+    QueryParamCollection,
     path,
-    pathquery,
     parse_query_params,
 )
-from django_queryparams_parser.params import (
-    QueryParam,
-    Int,
-    PositiveInt,
-    Float,
-    PositiveFloat,
-    Str,
-    Bool,
-    Date,
-)
+from django_queryparams_parser import params

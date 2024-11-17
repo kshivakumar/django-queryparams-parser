@@ -13,6 +13,7 @@ from inspect import signature
 # - Replace list comprehensions or for-loops with map and filter
 
 # TODO:
+# - support DRF generics/viewsets
 # - Handle null/empty param values
 # - Define DateTime
 # - Prefix/suffix query param name in all exception messages
@@ -86,6 +87,9 @@ class QueryParam:
                         f"Validator {validator.__name__} must have exactly two parameters"
                     )
             self._value_checks.extend(validators)
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.name})"
 
     def validate_single(self, value):
         parsed = self.parse(value)
@@ -377,3 +381,15 @@ class Bool(QueryParam):
             raise InvalidQueryParameter(
                 f"Expected one of [{self.truthy}, {self.falsy}], got '{value}'"
             )
+
+
+__all__ = (
+    "Bool",
+    "Date",
+    "Float",
+    "Int",
+    "PositiveFloat",
+    "PositiveInt",
+    "QueryParam",
+    "Str",
+)
