@@ -16,7 +16,7 @@ from inspect import signature
 # - support DRF generics/viewsets
 # - Handle null/empty param values
 # - Define DateTime
-# - Prefix/suffix query param name in all exception messages
+# - Customize InvalidQueryParameter
 # - Implement QueryParamGroup
 # - Optimize QueryParam memory usage, use slots?
 # - Add annotations
@@ -141,17 +141,23 @@ class BoundedParam(QueryParam):
         elif max_value is not None:
             self._value_checks.append(self._check_upper_bound)
 
-    def check_lower_bound(self, value, parsed):
-        if not parsed > self.min_value:
-            raise InvalidQueryParameter()
+    def _check_lower_bound(self, value, parsed):
+        if parsed < self.min_value:
+            raise InvalidQueryParameter(
+                f"Minimum value allowed: {self.min_value}, received {value}"
+            )
 
-    def check_upper_bound(self, value, parsed):
-        if not parsed < self.max_value:
-            raise InvalidQueryParameter()
+    def _check_upper_bound(self, value, parsed):
+        if parsed > self.max_value:
+            raise InvalidQueryParameter(
+                f"Maximum value allowed: {self.max_value}, received {value}"
+            )
 
-    def check_upper_and_lower_bounds(self, value, parsed):
+    def _check_upper_and_lower_bounds(self, value, parsed):
         if not (self.min_value <= parsed <= self.max_value):
-            raise InvalidQueryParameter()
+            raise InvalidQueryParameter(
+                f"Value expected between {self.min_value} and {self.max_value}, received {value}"
+            )
 
 
 class Number(BoundedParam):

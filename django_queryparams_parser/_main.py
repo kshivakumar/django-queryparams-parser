@@ -58,6 +58,11 @@ class QueryParamRegistry:
                             errors.append(f"{str(exc)}: {param.name}")
                     elif param.required:
                         errors.append(f"Missing required query param: {param.name}")
+                    else:  # undeclared param
+                        # TODO: Review
+                        # Doing nothing reduces strictness
+                        # raise error? or provide a library-level flag for user to decide
+                        pass
 
         return parsed, errors
 
@@ -104,8 +109,9 @@ def register_path_params(urlpattern: URLPattern, query_params: List[Any]) -> Non
             try:
                 param_registry.register_pattern(urlpattern.pattern, params)
             except PatternAlreadyRegisteredError:
+                # TODO: print view func name, if possible
                 raise ValueError(
-                    f"query params are defined at both urlconf {urlpattern.pattern} and its view"
+                    f"query params are defined at both urlconf '{urlpattern.pattern}' and its view"
                 )
             del param_registry._view_params[func_id]
             break

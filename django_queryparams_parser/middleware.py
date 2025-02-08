@@ -7,9 +7,9 @@ from django_queryparams_parser._main import param_registry
 
 def QueryParamMiddleware(get_response):
     def parser(request):
-        parsed, errors = param_registry.validate_request_params(request.path, request.GET)
-        print(param_registry)
-        print("Parse status\n", parsed, "\n", errors)
+        parsed, errors = param_registry.validate_request_params(
+            request.path, request.GET
+        )
         if errors:
             if settings.DEBUG:
                 # return DetailedReport
