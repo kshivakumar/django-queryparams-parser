@@ -1,4 +1,6 @@
-from datetime import date
+import decimal
+import uuid
+from datetime import date, datetime
 from inspect import signature
 
 # Notes:
@@ -13,15 +15,11 @@ from inspect import signature
 # - Replace list comprehensions or for-loops with map and filter
 
 # TODO:
-# - support DRF generics/viewsets
 # - Handle null/empty param values
-# - Define DateTime
 # - Customize InvalidQueryParameter
-# - Implement QueryParamGroup
 # - Optimize QueryParam memory usage, use slots?
 # - Add annotations
 # - Add extensive docstrings
-# - Define UUID
 # - Define Base64
 
 # Customization Options:
@@ -323,11 +321,7 @@ class Str(QueryParam):
 
 class Date(BoundedParam):
     def __init__(self, name, *, separator="-", **kwargs):
-        if separator not in ("-", "/"):
-            raise ValueError()
-
         self.separator = separator
-
         super().__init__(name, **kwargs)
 
     def parse(self, value):
@@ -335,8 +329,16 @@ class Date(BoundedParam):
             value = value.replace(self.separator, "-")
         try:
             return date.fromisoformat(value)
-        except ValueError:
-            raise InvalidQueryParameter()
+        except ValueError as exc:
+            raise InvalidQueryParameter(str(exc))
+
+
+class DateTime(BoundedParam):
+    def parse(self, value):
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError as exc:
+            raise InvalidQueryParameter(str(exc))
 
 
 class Bool(QueryParam):
@@ -347,7 +349,7 @@ class Bool(QueryParam):
         required=False,
         explicit=False,
         ignore_case=True,
-        custom_bool=None,
+        custom_bool=None | tuple[str, str],
     ):
         if not isinstance(name, str):
             raise TypeError(f"'name' must be string, not '{type(name)}'")
@@ -387,6 +389,34 @@ class Bool(QueryParam):
             raise InvalidQueryParameter(
                 f"Expected one of [{self.truthy}, {self.falsy}], got '{value}'"
             )
+
+
+class UUID(QueryParam):
+    def parse(self, value):
+        try:
+            return uuid.UUID(value)
+        except ValueError as exc:
+            raise InvalidQueryParameter(str(exc))
+
+
+class Decimal(BoundedParam):
+    def __init__(self, name, *, precision=None, **kwargs):
+        self.precision = precision
+        super().__init__(name, **kwargs)
+
+        if precision and (not isinstance(precision, int) or precision < 0):
+            raise ValueError(
+                f"'precision' must be a non-negative integer, not {precision}"
+            )
+
+    def parse(self, value):
+        try:
+            d = decimal.Decimal(value)
+        except decimal.InvalidOperation:
+            raise InvalidQueryParameter("Invalid decimal value")
+        if self.precision is not None:
+            return d.quantize(decimal.Decimal(f"1E-{self.precision}"))
+        return d
 
 
 __all__ = (
